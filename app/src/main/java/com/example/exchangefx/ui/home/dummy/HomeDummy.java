@@ -1,4 +1,4 @@
-package UI.home.dummy;
+package com.example.exchangefx.ui.home.dummy;
 
 import java.util.*;
 
