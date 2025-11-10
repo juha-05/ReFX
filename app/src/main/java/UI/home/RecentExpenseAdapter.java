@@ -4,7 +4,7 @@ import android.view.*;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import R;
+import com.example.exchangefx.R;
 import java.util.*;
 
 public class RecentExpenseAdapter extends RecyclerView.Adapter<RecentExpenseAdapter.VH> {

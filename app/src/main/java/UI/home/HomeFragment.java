@@ -7,7 +7,7 @@ import androidx.annotation.*;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import R;
+import com.example.exchangefx.R;
 import UI.expense.ExpenseList;
 import UI.main.MainActivity;
 
@@ -24,7 +24,7 @@ public class HomeFragment extends Fragment {
 
         // 총 지출 카드 → 지출내역 화면으로
         v.findViewById(R.id.card_month_total).setOnClickListener(view -> {
-            ((MainActivity) requireActivity()).replace(new ExpenseListFragment(), true);
+            ((MainActivity) requireActivity()).replace(new ExpenseList(), true);
         });
 
         // 날짜 표시는 더미
