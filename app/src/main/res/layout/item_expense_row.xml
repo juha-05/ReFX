@@ -1,21 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-android:padding="12dp" android:orientation="vertical"
-android:layout_width="match_parent" android:layout_height="wrap_content">
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="12dp">
 
-<LinearLayout
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:orientation="horizontal" android:gravity="space_between">
-    <TextView android:id="@+id/tv_left"
-        android:text="파스타 (₩→€)"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-    <TextView android:id="@+id/tv_right"
-        android:text="+ ₩100" android:textStyle="bold"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-</LinearLayout>
+    <!-- 1. 날짜 (예: 11. 04) -->
+    <TextView
+        android:id="@+id/tv_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="#333333"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="11. 04" />
 
-<TextView android:id="@+id/tv_sub"
-    android:text="₩ 20,000"
-    android:textColor="#777"
-    android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-</LinearLayout>
+    <!-- 2. 아이콘 및 지출 내역 이름 (예: 🍝 파스타 (W → €)) -->
+    <ImageView
+        android:id="@+id/iv_icon_detail"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="16dp"
+        android:src="@drawable/ic_food_pasta"
+        android:contentDescription="지출 항목 아이콘"
+        app:layout_constraintTop_toTopOf="@id/tv_date"
+        app:layout_constraintBottom_toBottomOf="@id/tv_date"
+        app:layout_constraintStart_toEndOf="@id/tv_date" />
+
+    <TextView
+        android:id="@+id/tv_expense_detail_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/iv_icon_detail"
+        app:layout_constraintEnd_toStartOf="@id/tv_expense_amount_primary"
+        tools:text="파스타 (W → €)" />
+
+    <!-- 3. 지출 금액 (주 금액, 예: + ₩100) -->
+    <TextView
+        android:id="@+id/tv_expense_amount_primary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#FF0000"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="+ ₩100" />
+
+    <!-- 4. 잔액 또는 부 금액 (예: ₩20,100) -->
+    <TextView
+        android:id="@+id/tv_expense_amount_secondary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp"
+        android:textColor="#666666"
+        app:layout_constraintTop_toBottomOf="@id/tv_expense_amount_primary"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="₩20,100" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- ic_food_pasta 등 아이콘은 res/drawable에 추가 필요 -->

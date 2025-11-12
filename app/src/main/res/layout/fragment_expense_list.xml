@@ -1,64 +1,166 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context=".ExpenseListFragment">
 
-    <!-- 상단 AppBar -->
-    <Button
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:id="@+id/BtnHome"
-        android:text="<"
-        android:background="@color/bg" />
-    
-    <TextView
+    <!-- 1. 상단 바 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/top_bar"
         android:layout_width="match_parent"
-        android:layout_height="30dp"
-        android:layout_gravity="center"
-        android:text="지출 내역"/>
-    <!-- 통화/월 선택 + 총액 -->
-    <LinearLayout
-        android:orientation="vertical" android:padding="16dp"
-        android:layout_width="match_parent" android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:gravity="space_between" android:orientation="horizontal">
-            <Spinner
-                android:id="@+id/sp_currency" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_weight="1"/>
-            <Spinner
-                android:id="@+id/sp_month" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_marginStart="12dp"
-                android:layout_weight="1"/>
-        </LinearLayout>
+        <!-- 뒤로 가기 버튼 (<) -->
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back_arrow"
+            android:contentDescription="뒤로 가기"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
+        <!-- 화면 타이틀 -->
         <TextView
-            android:id="@+id/tv_month_total"
-            android:text="₩ 1,234,000" android:textStyle="bold"
-            android:textSize="28sp" android:layout_marginTop="8dp"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="지출 내역"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
+        <!-- 통화 선택 드롭다운 (원화 ▾) -->
+        <TextView
+            android:id="@+id/tv_currency_dropdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="원화 ▾"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            app:layout_constraintTop_toBottomOf="@id/tv_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+        android:id="@+id/divider_top"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        app:layout_constraintTop_toBottomOf="@id/top_bar" />
+
+    <!-- 2. 월/연도 선택 및 총 지출액 표시 영역 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/expense_summary_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/divider_top">
+
+        <!-- 월/연도 선택 (2025. 11 ▾) -->
+        <TextView
+            android:id="@+id/tv_month_year_selector"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2025. 11 ▾"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="4dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- 총 지출액 -->
+        <TextView
+            android:id="@+id/tv_total_expense_list_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="₩ 1,234,000"
+            android:textSize="48sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            app:layout_constraintTop_toBottomOf="@id/tv_month_year_selector"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- 환율 기준 토글 버튼 (오늘환율, 지출 시점 환율) -->
         <LinearLayout
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:gravity="center"
-            android:layout_marginTop="8dp">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_today"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:text="오늘환율" android:layout_marginEnd="8dp"/>
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_at_time"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:text="지출 시점 환율"/>
-        </LinearLayout>
-    </LinearLayout>
+            android:id="@+id/ll_exchange_rate_toggles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/tv_total_expense_list_amount"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- 리스트 -->
+            <Button
+                android:id="@+id/btn_today_rate_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="오늘환율"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#007AFF"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+
+            <Button
+                android:id="@+id/btn_transaction_rate_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="지출 시점 환율"
+                android:textColor="@android:color/black"
+                android:backgroundTint="#E0E0E0"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- 구분선 -->
+    <View
+        android:id="@+id/divider_middle"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/expense_summary_container" />
+
+    <!-- 3. 지출 내역 목록 (스크롤 가능한 부분) -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_list"
-        android:layout_width="match_parent" android:layout_height="0dp"
-        android:layout_weight="1"/>
-</LinearLayout>
+        android:id="@+id/rv_expense_list"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:paddingHorizontal="16dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintTop_toBottomOf="@id/divider_middle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/list_item_expense_detail" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- ic_back_arrow 아이콘은 res/drawable에 추가 필요 -->
