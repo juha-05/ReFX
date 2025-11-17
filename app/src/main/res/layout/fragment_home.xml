@@ -51,7 +51,7 @@
                 android:id="@+id/tv_chevron"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="›"
+                android:text="&gt;"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_alignParentEnd="true"

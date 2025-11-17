@@ -2,14 +2,14 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/white"
+    android:background="@color/bg"
     android:paddingTop="8dp"
     android:paddingBottom="4dp">
 
     <!-- 뒤로가기 버튼 -->
     <Button
         android:id="@+id/btnBack"
-        android:text="＜"
+        android:text="&lt;"
         android:textSize="20sp"
         android:textColor="#000000"
         android:background="@android:color/transparent"
