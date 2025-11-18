@@ -31,7 +31,7 @@
         android:gravity="center"
         android:text="지출 추가/수정"
         android:textColor="#000000"
-        android:textSize="18sp"
+        android:textSize="20sp"
         android:textStyle="bold" />
 
     <!-- 구분선 -->

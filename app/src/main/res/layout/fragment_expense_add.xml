@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FAFAFA"
-    android:padding="16dp"
     tools:context=".ui.expense.ExpenseAddFragment">
 
     <LinearLayout
@@ -15,252 +14,259 @@
         <!-- 상단 공용 툴바 -->
         <include layout="@layout/toolbar_common" />
 
-        <!-- 날짜 -->
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/edittext_white"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:text="날짜"
-                android:textSize="15sp"
-                android:textColor="#000"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <EditText
-                android:id="@+id/etDate"
-                android:hint="2025. 11. 03"
-                android:focusable="false"
-                android:background="@null"
-                android:padding="10dp"
-                android:gravity="end|center_vertical"
-                android:layout_width="match_parent"
-                android:layout_marginStart="16dp"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-        <!-- 환전 금액 -->
-        <TextView
-            android:text="환전 금액"
-            android:textStyle="bold"
-            android:textColor="#000"
-            android:textSize="15sp"
-            android:layout_marginTop="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <!-- 첫 번째 줄 -->
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:gravity="center_vertical">
-
-            <Spinner
-                android:id="@+id/spinnerFrom"
-                android:entries="@array/currency_array"
-                android:background="@drawable/blackborder_whitebg"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp" />
-
-            <EditText
-                android:id="@+id/etAmountFrom"
-                android:hint="$ 금액"
-                android:inputType="numberDecimal"
-                android:gravity="end|center_vertical"
-                android:paddingHorizontal="12dp"
-                android:textColor="#000"
-                android:layout_width="0dp"
-                android:layout_weight="2"
-                android:layout_height="48dp"
-                android:background="@drawable/blackborder_whitebg" />
-        </LinearLayout>
-
-        <!-- 두 번째 줄 -->
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:gravity="center_vertical">
-
-            <Spinner
-                android:id="@+id/spinnerTo"
-                android:entries="@array/currency_array"
-                android:background="@drawable/blackborder_whitebg"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp" />
-
-            <EditText
-                android:id="@+id/etAmountTo"
-                android:hint="₩ 금액"
-                android:inputType="numberDecimal"
-                android:gravity="end|center_vertical"
-                android:paddingHorizontal="12dp"
-                android:textColor="#000"
-                android:layout_width="0dp"
-                android:layout_weight="2"
-                android:layout_height="48dp"
-                android:background="@drawable/blackborder_whitebg" />
-        </LinearLayout>
-
-        <!-- 적용 환율 박스 -->
         <LinearLayout
             android:orientation="vertical"
-            android:background="#E0E0E0"
-            android:padding="12dp"
-            android:layout_marginTop="16dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp">
 
+            <!-- 날짜 -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edittext_white"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:text="날짜"
+                    android:textSize="15sp"
+                    android:textColor="#000"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <EditText
+                    android:id="@+id/etDate"
+                    android:hint="2025. 11. 03"
+                    android:focusable="false"
+                    android:background="@null"
+                    android:padding="10dp"
+                    android:gravity="end|center_vertical"
+                    android:layout_width="match_parent"
+                    android:layout_marginStart="16dp"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- 환전 금액 -->
             <TextView
-                android:text="적용 환율"
+                android:text="환전 금액"
                 android:textStyle="bold"
                 android:textColor="#000"
                 android:textSize="15sp"
+                android:layout_marginTop="16dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#DDDDDD"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:id="@+id/tvRateTime"
-                android:text="11월 4일 오전 6:48 UTC"
-                android:textSize="13sp"
-                android:textColor="#777"
-                android:gravity="end"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:id="@+id/tvRate"
-                android:text="$ 1 = ₩ 1,435.94"
-                android:textStyle="bold"
-                android:textSize="20sp"
-                android:textColor="#000"
-                android:layout_marginTop="6dp"
-                android:gravity="center"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-
-        <!-- 카테고리 + 이름 -->
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_marginTop="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:weightSum="2">
-
-            <!-- 카테고리 -->
+            <!-- 첫 번째 줄 -->
             <LinearLayout
                 android:orientation="horizontal"
-                android:layout_weight="1"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/edittext_white"
-                android:padding="10dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center_vertical">
-
-                <TextView
-                    android:text="카테고리"
-                    android:textColor="#000"
-                    android:textSize="14sp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp" />
 
                 <Spinner
-                    android:id="@+id/spinnerCategory"
-                    android:entries="@array/category_array"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@null" />
-            </LinearLayout>
-
-            <!-- 이름 -->
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:background="@drawable/edittext_white"
-                android:padding="10dp"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:text="이름"
-                    android:textColor="#000"
-                    android:textSize="14sp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:id="@+id/spinnerFrom"
+                    android:entries="@array/currency_array"
+                    android:background="@drawable/blackborder_whitebg"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="8dp" />
 
                 <EditText
-                    android:id="@+id/etName"
-                    android:hint="파스타"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@null"
-                    android:inputType="text"
+                    android:id="@+id/etAmountFrom"
+                    android:hint="$ 금액"
+                    android:inputType="numberDecimal"
+                    android:gravity="end|center_vertical"
+                    android:paddingHorizontal="12dp"
                     android:textColor="#000"
-                    android:layout_weight="1" />
+                    android:layout_width="0dp"
+                    android:layout_weight="2"
+                    android:layout_height="48dp"
+                    android:background="@drawable/blackborder_whitebg" />
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- 메모 -->
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_marginTop="12dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/edittext_white"
-            android:padding="10dp">
-
-            <TextView
-                android:text="메모"
-                android:textColor="#000"
-                android:textSize="14sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <EditText
-                android:id="@+id/etMemo"
-                android:hint="메모를 입력하세요"
+            <!-- 두 번째 줄 -->
+            <LinearLayout
+                android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minLines="3"
-                android:gravity="top|start"
-                android:background="@null"
-                android:textColor="#000" />
-        </LinearLayout>
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical">
 
-        <!-- 저장 버튼 -->
-        <Button
-            android:id="@+id/btnSave"
-            android:text="저장"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:backgroundTint="@color/point_blue"
-            android:layout_marginTop="20dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+                <Spinner
+                    android:id="@+id/spinnerTo"
+                    android:entries="@array/currency_array"
+                    android:background="@drawable/blackborder_whitebg"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp" />
+
+                <EditText
+                    android:id="@+id/etAmountTo"
+                    android:hint="₩ 금액"
+                    android:inputType="numberDecimal"
+                    android:gravity="end|center_vertical"
+                    android:paddingHorizontal="12dp"
+                    android:textColor="#000"
+                    android:layout_width="0dp"
+                    android:layout_weight="2"
+                    android:layout_height="48dp"
+                    android:background="@drawable/blackborder_whitebg" />
+            </LinearLayout>
+
+            <!-- 적용 환율 박스 -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:background="#E0E0E0"
+                android:padding="12dp"
+                android:layout_marginTop="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:text="적용 환율"
+                    android:textStyle="bold"
+                    android:textColor="#000"
+                    android:textSize="15sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#DDDDDD"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvRateTime"
+                    android:text="11월 4일 오전 6:48 UTC"
+                    android:textSize="13sp"
+                    android:textColor="#777"
+                    android:gravity="end"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/tvRate"
+                    android:text="$ 1 = ₩ 1,435.94"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    android:textColor="#000"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+
+            <!-- 카테고리 + 이름 -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:weightSum="2">
+
+                <!-- 카테고리 -->
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/edittext_white"
+                    android:padding="10dp"
+                    android:layout_marginEnd="8dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:text="카테고리"
+                        android:textColor="#000"
+                        android:textSize="14sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp" />
+
+                    <Spinner
+                        android:id="@+id/spinnerCategory"
+                        android:entries="@array/category_array"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@null" />
+                </LinearLayout>
+
+                <!-- 이름 -->
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/edittext_white"
+                    android:padding="10dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:text="이름"
+                        android:textColor="#000"
+                        android:textSize="14sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp" />
+
+                    <EditText
+                        android:id="@+id/etName"
+                        android:hint="파스타"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:inputType="text"
+                        android:textColor="#000"
+                        android:layout_weight="1" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 메모 -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_marginTop="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/edittext_white"
+                android:padding="10dp">
+
+                <TextView
+                    android:text="메모"
+                    android:textColor="#000"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <EditText
+                    android:id="@+id/etMemo"
+                    android:hint="메모를 입력하세요"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="3"
+                    android:gravity="top|start"
+                    android:background="@null"
+                    android:textColor="#000" />
+            </LinearLayout>
+
+            <!-- 저장 버튼 -->
+            <Button
+                android:id="@+id/btnSave"
+                android:text="저장"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:backgroundTint="@color/point_blue"
+                android:layout_marginTop="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>
