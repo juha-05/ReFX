@@ -22,6 +22,7 @@ import com.example.exchangefx.data.db.AppDatabase;
 import com.example.exchangefx.data.entity.Expense;
 import com.example.exchangefx.ui.expense.ExpenseList;
 import com.example.exchangefx.ui.main.MainActivity;
+import com.example.exchangefx.ui.expense.ExpenseAddFragment;
 import com.example.exchangefx.ui.chart.ChartsNav;
 import com.example.exchangefx.ui.expense.ExpenseEditNav;
 import com.example.exchangefx.ui.settings.Settings;
