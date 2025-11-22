@@ -7,13 +7,20 @@ import com.example.exchangefx.R;
 
 public class ExpenseEditNav extends AppCompatActivity {
 
+    public static final String EXTRA_OPEN_ADD = "open_add";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_expense_edit_nav);
 
-        // 앱 실행 시 첫 화면: ExpenseListFragment
-        showExpenseList();
+        boolean openAdd = getIntent().getBooleanExtra(EXTRA_OPEN_ADD, false);
+
+        if (openAdd) {
+            showExpenseAdd();
+        } else {
+            showExpenseList();
+        }
     }
 
     // Fragment 1: 지출 목록 화면
