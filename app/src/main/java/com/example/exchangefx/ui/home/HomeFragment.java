@@ -28,9 +28,6 @@ import com.example.exchangefx.utils.FrankfurterCall;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import org.json.JSONException;
-
-import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -39,11 +36,7 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * HomeFragment 최종본 (환율 비교 기능 유지)
- * - Today 기준: FrankfurterCall 사용
- * - AtSpend 기준: DB에 저장된 targetAmount 그대로 사용
- */
+
 public class HomeFragment extends Fragment {
 
     private TextView tvTotalExpenseAmount;
@@ -74,7 +67,6 @@ public class HomeFragment extends Fragment {
 
         View v = inflater.inflate(R.layout.fragment_home, container, false);
 
-        // View 찾기
         tvTotalExpenseAmount = v.findViewById(R.id.tv_total_expense_amount);
         tvSectionDate        = v.findViewById(R.id.tv_section_date);
         recyclerRecent       = v.findViewById(R.id.recycler_recent);
@@ -85,7 +77,10 @@ public class HomeFragment extends Fragment {
         BottomNavigationView bottomNav = v.findViewById(R.id.bottom_navigation);
         TextView tvChevron   = v.findViewById(R.id.tv_chevron);
 
-        // ">" → 지출내역 페이지
+
+        // ------------------------------------------
+        // ">" 버튼 → 지출 목록 화면
+        // ------------------------------------------
         tvChevron.setOnClickListener(view -> {
             if (requireActivity() instanceof MainActivity) {
                 ((MainActivity) requireActivity())
@@ -93,91 +88,97 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // DB 인스턴스
+        // DB & 환율
         expenseDao = AppDatabase2.getInstance(requireContext()).expenseDao2();
         fxRateClient = new FrankfurterCall();
 
-        // 오늘 날짜 표시
+        // 오늘 날짜
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy. MM. dd", Locale.KOREA);
         tvSectionDate.setText(sdf.format(new Date()));
 
-        // 리사이클러뷰 설정
+        // 최근 지출 목록
         recentAdapter = new RecentExpenseAdapter();
         recyclerRecent.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerRecent.setAdapter(recentAdapter);
 
-        // 환율 기준 라디오 버튼 설정
-        rbToday.setOnCheckedChangeListener((btn, isChecked) -> {
-            if (isChecked) {
+        // 환율 기준 라디오
+        rbToday.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) {
                 currentBasis = Basis.TODAY;
                 recalcAmounts();
             }
         });
-        rbAtSpend.setOnCheckedChangeListener((btn, isChecked) -> {
-            if (isChecked) {
+
+        rbAtSpend.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) {
                 currentBasis = Basis.AT_SPEND;
                 recalcAmounts();
             }
         });
 
-        rbToday.setChecked(true); // 기본값
+        rbToday.setChecked(true);
 
-        // FAB → 지출 추가 화면
+
+        // =====================================================
+        // 우상단 FloatingActionButton (+) → 바로 추가 화면
+        // =====================================================
         fabQuickAdd.setOnClickListener(view -> {
             Intent intent = new Intent(requireActivity(), ExpenseEditNav.class);
-            intent.putExtra(ExpenseEditNav.EXTRA_OPEN_ADD, true);
+            intent.putExtra(ExpenseEditNav.EXTRA_OPEN_ADD, true);  // ★ AddFragment로 바로 감
             startActivity(intent);
         });
 
-        // 하단 네비게이션
+
+        // =====================================================
+        // 하단 네비게이션 + → 추가화면이 아니라 "목록부터" 시작
+        // =====================================================
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
+
             if (id == R.id.nav_home) return true;
+
             if (id == R.id.nav_add) {
+                // ★ 추가 누르면 지출 목록(3장)이 먼저 떠야 한다.
                 Intent intent = new Intent(requireActivity(), ExpenseEditNav.class);
-                intent.putExtra(ExpenseEditNav.EXTRA_OPEN_ADD, true);
+                // open_add 전달❌ → 기본 목록부터 열림
                 startActivity(intent);
                 return true;
             }
+
             if (id == R.id.nav_charts) {
                 startActivity(new Intent(requireActivity(), ChartsNav.class));
                 return true;
             }
+
             if (id == R.id.nav_settings) {
                 startActivity(new Intent(requireActivity(), Settings.class));
                 return true;
             }
+
             return false;
         });
 
-        // 첫 계산
+        // 첫 계산 실행
         recalcAmounts();
 
         return v;
     }
 
-    /**
-     * 지출 금액 재계산:
-     * - AT_SPEND: DB targetAmount 합
-     * - TODAY: API 최신 환율로 baseAmount 환산
-     */
+
     private void recalcAmounts() {
         ioExecutor.execute(() -> {
 
-            List<Expense2> all = expenseDao.getAllExpenses();  // id DESC 정렬됨
-
+            List<Expense2> all = expenseDao.getAllExpenses();
             double total = 0.0;
 
             for (Expense2 e : all) {
 
                 if (currentBasis == Basis.AT_SPEND) {
-                    // 지출 시점 환율 = 저장된 targetAmount 그대로 사용
                     total += e.targetAmount;
                     continue;
                 }
 
-                // ---- TODAY 기준: API 최신 환율로 재계산 ----
-                double base = e.baseAmount;
+                double baseAmount = e.baseAmount;
                 String baseCurrency = e.baseCurrency;
 
                 if (baseCurrency == null || baseCurrency.trim().isEmpty()) continue;
@@ -186,18 +187,21 @@ public class HomeFragment extends Fragment {
 
                 if (!"KRW".equalsIgnoreCase(baseCurrency)) {
                     try {
-                        // 최신 환율
-                        rate = fxRateClient.getRateToKrw("latest", baseCurrency);
-                    } catch (IOException | JSONException ex) {
+                        rate = fxRateClient.getRateWithCache(
+                                requireContext(),
+                                "latest",
+                                baseCurrency,
+                                "KRW"
+                        );
+                    } catch (Exception ex) {
                         ex.printStackTrace();
                         continue;
                     }
                 }
 
-                total += base * rate;
+                total += baseAmount * rate;
             }
 
-            // 최근 5개
             int max = Math.min(all.size(), MAX_RECENT);
             List<Expense2> recent = all.subList(0, max);
 
@@ -211,6 +215,7 @@ public class HomeFragment extends Fragment {
             }
         });
     }
+
 
     private String formatKrw(double amount) {
         NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.KOREA);

@@ -20,17 +20,10 @@ import androidx.fragment.app.Fragment;
 import com.example.exchangefx.R;
 import com.example.exchangefx.data.db.AppDatabase2;
 import com.example.exchangefx.data.entity.Expense2;
+import com.example.exchangefx.ui.expense.ExpenseEditNav;
+import com.example.exchangefx.utils.FrankfurterCall;
 
-import org.json.JSONObject;
-
-import java.io.IOException;
 import java.util.Calendar;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 public class ExpenseAddFragment extends Fragment {
 
@@ -39,19 +32,14 @@ public class ExpenseAddFragment extends Fragment {
     private TextView tvDate, tvAppliedRate, tvRateTime;
     private Button btnApplyRate;
 
-    private OkHttpClient client = new OkHttpClient();
-    private double latestRate = 0.0;
-
+    private double latestRate = 1.0;
     private String apiDate = "";
 
-    // 수정 모드인지 확인
-    private int editingId = -1;  // -1 = 신규, 1 이상 = 수정
+    private int editingId = -1;
     private Expense2 editingData = null;
 
+    private FrankfurterCall fxClient = new FrankfurterCall();
 
-    // --------------------------------------------
-    // newInstance : 수정 기능을 위한 ID 전달
-    // --------------------------------------------
     public static ExpenseAddFragment newInstance(int expenseId) {
         ExpenseAddFragment fragment = new ExpenseAddFragment();
         Bundle args = new Bundle();
@@ -85,34 +73,42 @@ public class ExpenseAddFragment extends Fragment {
 
         btnApplyRate = v.findViewById(R.id.btn_apply_rate);
 
-        // 오늘 날짜 세팅
+        // 오늘 날짜
         setTodayDate();
 
         // 날짜 선택
         tvDate.setOnClickListener(view -> showDatePicker());
 
-        // 뒤로가기
+        // --------------------
+        // 뒤로가기 고급 처리
+        // --------------------
         Button btnBack = v.findViewById(R.id.btnBack);
         btnBack.setOnClickListener(view -> {
+
             if (requireActivity() instanceof ExpenseEditNav) {
+                // 정상 Flow → 목록으로 복귀
                 ((ExpenseEditNav) requireActivity()).showExpenseList();
             } else {
-                requireActivity().getSupportFragmentManager().popBackStack();
+                // 홈 → 우상단 + → AddFragment 직접 진입한 Flow
+                requireActivity()
+                        .getSupportFragmentManager()
+                        .popBackStackImmediate();
             }
         });
 
         // 저장 버튼
-        Button btnSave = v.findViewById(R.id.btnSave);
-        btnSave.setOnClickListener(view -> saveExpense());
+        v.findViewById(R.id.btnSave).setOnClickListener(view -> saveExpense());
 
+        // 스피너 리스너
         spinnerBase.setOnItemSelectedListener(spinnerListener);
         spinnerTarget.setOnItemSelectedListener(spinnerListener);
+
         btnApplyRate.setOnClickListener(view -> applyRateToAmount());
 
-        // 환율 초기 로드
+        // 초기 환율 로드
         loadRateBySpinner();
 
-        // 수정 모드라면 데이터 불러오기
+        // 수정 데이터 불러오기
         if (getArguments() != null) {
             editingId = getArguments().getInt("expense_id", -1);
             if (editingId != -1) {
@@ -123,12 +119,8 @@ public class ExpenseAddFragment extends Fragment {
         return v;
     }
 
-    // ============================================
-    // 오늘 날짜
-    // ============================================
     private void setTodayDate() {
         Calendar cal = Calendar.getInstance();
-
         int y = cal.get(Calendar.YEAR);
         int m = cal.get(Calendar.MONTH) + 1;
         int d = cal.get(Calendar.DAY_OF_MONTH);
@@ -137,9 +129,6 @@ public class ExpenseAddFragment extends Fragment {
         apiDate = String.format("%04d-%02d-%02d", y, m, d);
     }
 
-    // ============================================
-    // 날짜 선택
-    // ============================================
     private void showDatePicker() {
         Calendar cal = Calendar.getInstance();
 
@@ -163,9 +152,6 @@ public class ExpenseAddFragment extends Fragment {
         dialog.show();
     }
 
-    // ============================================
-    // 수정 데이터 불러오기
-    // ============================================
     private void loadExistingData(int id) {
         new Thread(() -> {
             editingData = AppDatabase2.getInstance(requireContext())
@@ -173,7 +159,7 @@ public class ExpenseAddFragment extends Fragment {
                     .getExpenseById(id);
 
             if (editingData != null) {
-                requireActivity().runOnUiThread(() -> fillFields());
+                requireActivity().runOnUiThread(this::fillFields);
             }
 
         }).start();
@@ -189,7 +175,6 @@ public class ExpenseAddFragment extends Fragment {
         tvDate.setText(editingData.spendDate);
         apiDate = editingData.fxDate;
 
-        // 스피너 선택값 설정
         setSpinnerSelection(spinnerBase, editingData.baseCurrency);
         setSpinnerSelection(spinnerTarget, editingData.targetCurrency);
         setSpinnerSelection(spinnerCategory, editingData.category);
@@ -206,9 +191,6 @@ public class ExpenseAddFragment extends Fragment {
         }
     }
 
-    // =====================================================
-    // 환율 불러오기
-    // =====================================================
     private final AdapterView.OnItemSelectedListener spinnerListener =
             new AdapterView.OnItemSelectedListener() {
                 @Override
@@ -220,7 +202,6 @@ public class ExpenseAddFragment extends Fragment {
             };
 
     private void loadRateBySpinner() {
-
         String base = spinnerBase.getSelectedItem().toString();
         String target = spinnerTarget.getSelectedItem().toString();
 
@@ -231,60 +212,31 @@ public class ExpenseAddFragment extends Fragment {
             return;
         }
 
-        fetchRate(apiDate, base, target);
-    }
+        new Thread(() -> {
+            try {
+                latestRate = fxClient.getRateWithCache(
+                        requireContext(),
+                        apiDate,
+                        base,
+                        target
+                );
 
-    private void fetchRate(String date, String base, String target) {
+                requireActivity().runOnUiThread(() -> {
+                    tvAppliedRate.setText(
+                            "1 " + base + " = " + target + " " +
+                                    String.format("%,.4f", latestRate)
+                    );
+                    tvRateTime.setText(apiDate + " 기준");
+                });
 
-        String url = "https://api.frankfurter.app/" + date +
-                "?from=" + base + "&to=" + target;
-
-        Request request = new Request.Builder().url(url).build();
-
-        client.newCall(request).enqueue(new Callback() {
-
-            @Override
-            public void onFailure(Call call, IOException e) {
+            } catch (Exception e) {
                 requireActivity().runOnUiThread(() ->
-                        Toast.makeText(getContext(),
-                                "환율 불러오기 실패",
-                                Toast.LENGTH_SHORT).show()
+                        Toast.makeText(getContext(), "환율 불러오기 실패", Toast.LENGTH_SHORT).show()
                 );
             }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-
-                String json = response.body().string();
-
-                try {
-                    JSONObject obj = new JSONObject(json);
-                    JSONObject rates = obj.getJSONObject("rates");
-
-                    latestRate = rates.getDouble(target);
-
-                    requireActivity().runOnUiThread(() -> {
-                        tvAppliedRate.setText(
-                                "1 " + base + " = " + target + " " +
-                                        String.format("%,.4f", latestRate)
-                        );
-                        tvRateTime.setText(date + " 기준");
-                    });
-
-                } catch (Exception e) {
-                    requireActivity().runOnUiThread(() ->
-                            Toast.makeText(getContext(),
-                                    "환율 파싱 오류",
-                                    Toast.LENGTH_SHORT).show()
-                    );
-                }
-            }
-        });
+        }).start();
     }
 
-    // ============================================
-    // 금액 계산
-    // ============================================
     private void applyRateToAmount() {
 
         if (etBaseAmount.getText().toString().trim().isEmpty()) {
@@ -298,9 +250,6 @@ public class ExpenseAddFragment extends Fragment {
         etTargetAmount.setText(String.format("%,.2f", result));
     }
 
-    // ============================================
-    // 저장 버튼(신규 + 수정)
-    // ============================================
     private void saveExpense() {
 
         String name = etName.getText().toString();
@@ -320,7 +269,6 @@ public class ExpenseAddFragment extends Fragment {
             AppDatabase2 db = AppDatabase2.getInstance(requireContext());
 
             if (editingId == -1) {
-                // 신규 등록
                 Expense2 newItem = new Expense2(
                         name, spendDate, fxDate,
                         baseAmount, targetAmount,
@@ -330,7 +278,6 @@ public class ExpenseAddFragment extends Fragment {
                 db.expenseDao2().insertExpense(newItem);
 
             } else {
-                // 수정하기
                 editingData.name = name;
                 editingData.spendDate = spendDate;
                 editingData.fxDate = fxDate;
@@ -346,7 +293,14 @@ public class ExpenseAddFragment extends Fragment {
 
             requireActivity().runOnUiThread(() -> {
                 Toast.makeText(getContext(), "저장 완료!", Toast.LENGTH_SHORT).show();
-                ((ExpenseEditNav) requireActivity()).showExpenseList();
+
+                if (requireActivity() instanceof ExpenseEditNav) {
+                    ((ExpenseEditNav) requireActivity()).showExpenseList();
+                } else {
+                    requireActivity()
+                            .getSupportFragmentManager()
+                            .popBackStackImmediate();
+                }
             });
 
         }).start();

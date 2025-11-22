@@ -1,6 +1,11 @@
 package com.example.exchangefx.utils;
 
-import org.json.JSONException;
+import android.content.Context;
+
+import com.example.exchangefx.data.db.AppDatabase2;
+import com.example.exchangefx.data.dao.FxRateCacheDao;
+import com.example.exchangefx.data.entity.FxRateCache;
+
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -12,73 +17,99 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 /**
- * Frankfurter API 에서 환율을 가져오는 간단한 클라이언트.
- * - OkHttp 사용
- * - 메모리 캐시(Map) 사용 (같은 날짜/통화 조합이면 다시 요청 안 함)
+ * Frankfurter API + DB 캐시 + 메모리 캐시
  */
 public class FrankfurterCall {
 
     private static final String BASE_URL = "https://api.frankfurter.app/";
     private final OkHttpClient client = new OkHttpClient();
 
-    // key: date|FROM|TO   e.g. "latest|USD|KRW"  값: 환율(double)
-    private final Map<String, Double> inMemoryCache = new ConcurrentHashMap<>();
+    // 메모리 캐시 (앱 실행 중만 유지)
+    private final Map<String, Double> memoryCache = new ConcurrentHashMap<>();
 
     /**
-     * FROM 통화 → TO 통화 환율을 동기적으로 가져온다.
-     * dateOrLatest: "latest" 또는 "YYYY-MM-DD"
+     * DB + 메모리 캐시 기반 환율 조회
      */
-    public double getRateSync(String dateOrLatest, String from, String to)
-            throws IOException, JSONException {
+    public double getRateWithCache(
+            Context context,
+            String fxDate,
+            String base,
+            String target
+    ) throws IOException {
 
-        if (from == null || to == null) {
-            throw new IllegalArgumentException("from/to 통화 코드는 null 이면 안 됩니다.");
+        if (base.equalsIgnoreCase(target)) return 1.0;
+
+        // Frankfurter 형식 보정
+        String date = (fxDate == null || fxDate.isEmpty()) ? "latest" : fxDate;
+
+        String key = date + "|" + base + "|" + target;
+
+        // -------------------------
+        // 1) 메모리 캐시 확인
+        // -------------------------
+        if (memoryCache.containsKey(key)) {
+            return memoryCache.get(key);
         }
 
-        if (from.equalsIgnoreCase(to)) {
-            return 1.0;
-        }
+        // -------------------------
+        // 2) DB 캐시 확인
+        // -------------------------
+        FxRateCacheDao dao = AppDatabase2.getInstance(context).fxRateCacheDao();
+        FxRateCache cached = dao.getCachedRate(date, base, target);
 
-        String datePart = (dateOrLatest == null || dateOrLatest.isEmpty())
-                ? "latest"
-                : dateOrLatest;
-
-        String key = datePart + "|" + from + "|" + to;
-
-        // 1) 메모리 캐시에 있으면 그대로 사용
-        Double cached = inMemoryCache.get(key);
         if (cached != null) {
-            return cached;
+            memoryCache.put(key, cached.rate);
+            return cached.rate;
         }
 
-        // 2) Frankfurter 호출
-        String path = "latest".equals(datePart) ? "latest" : datePart;
-        String url = BASE_URL + path + "?from=" + from + "&to=" + to;
+        // -------------------------
+        // 3) API 호출
+        // -------------------------
+        double rate = fetchRateFromApi(date, base, target);
 
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+        // -------------------------
+        // 4) DB 캐시에 저장
+        // -------------------------
+        FxRateCache fx = new FxRateCache(
+                date,
+                base,
+                target,
+                rate
+        );
+        dao.insertRate(fx);
 
-        try (Response resp = client.newCall(request).execute()) {
-            if (!resp.isSuccessful()) {
-                throw new IOException("Frankfurter HTTP error: " + resp.code());
-            }
+        // -------------------------
+        // 5) 메모리 캐시 저장
+        // -------------------------
+        memoryCache.put(key, rate);
 
-            String body = resp.body().string();
-            JSONObject json = new JSONObject(body);
-            JSONObject rates = json.getJSONObject("rates");
-            double rate = rates.getDouble(to);
-
-            inMemoryCache.put(key, rate);
-            return rate;
-        }
+        return rate;
     }
 
     /**
-     * FROM → KRW 환율 편의 함수
+     * 실 API 호출
      */
-    public double getRateToKrw(String dateOrLatest, String from)
-            throws IOException, JSONException {
-        return getRateSync(dateOrLatest, from, "KRW");
+    private double fetchRateFromApi(String date, String base, String target) throws IOException {
+
+        String path = date.equals("latest") ? "latest" : date;
+
+        String url = BASE_URL + path + "?from=" + base + "&to=" + target;
+
+        Request request = new Request.Builder().url(url).build();
+
+        try (Response resp = client.newCall(request).execute()) {
+
+            if (!resp.isSuccessful()) {
+                throw new IOException("HTTP Error: " + resp.code());
+            }
+
+            String json = resp.body().string();
+            JSONObject root = new JSONObject(json);
+            JSONObject rates = root.getJSONObject("rates");
+
+            return rates.getDouble(target);
+        } catch (Exception e) {
+            throw new IOException("Frankfurter API parsing error: " + e.getMessage());
+        }
     }
 }

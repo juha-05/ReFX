@@ -10,7 +10,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,9 +20,6 @@ import com.example.exchangefx.data.db.AppDatabase2;
 import com.example.exchangefx.data.entity.Expense2;
 import com.example.exchangefx.utils.FrankfurterCall;
 
-import org.json.JSONException;
-
-import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -32,13 +28,19 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * ExpenseList (지출내역)
+ * - TODAY: 캐시 기반 최신 환율로 baseAmount → KRW 계산
+ * - AT_SPEND: DB에 저장된 targetAmount 사용
+ * - 환차익/환차손: TODAY 기준 금액 - 지출 기준 금액
+ */
 public class ExpenseList extends Fragment {
 
-    // 오늘 환율 true / 지출 시점 false
+    // true = 오늘 기준, false = 지출 시점 기준
     private boolean useToday = true;
 
     private int selectedYear;
-    private int selectedMonth; // 1~12
+    private int selectedMonth;
 
     private TextView tvTotalAmount;
     private TextView tvMonthYear;
@@ -48,8 +50,8 @@ public class ExpenseList extends Fragment {
 
     private ExpenseDao2 expenseDao;
     private FrankfurterCall fxClient;
-    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
+    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
     private RowAdapter rowAdapter;
 
     public ExpenseList() {}
@@ -62,8 +64,9 @@ public class ExpenseList extends Fragment {
 
         View v = inflater.inflate(R.layout.fragment_expense_list, container, false);
 
-        // 상단 뒤로가기
-        v.findViewById(R.id.btn_back).setOnClickListener(view -> requireActivity().onBackPressed());
+        v.findViewById(R.id.btn_back).setOnClickListener(view ->
+                requireActivity().onBackPressed()
+        );
 
         tvTotalAmount      = v.findViewById(R.id.tv_total_expense_list_amount);
         tvMonthYear        = v.findViewById(R.id.tv_month_year_selector);
@@ -74,20 +77,21 @@ public class ExpenseList extends Fragment {
         expenseDao = AppDatabase2.getInstance(requireContext()).expenseDao2();
         fxClient   = new FrankfurterCall();
 
-        // 오늘 날짜 기준 초기화
+        // 오늘 날짜 기준 월 선택
         Calendar cal = Calendar.getInstance();
         selectedYear  = cal.get(Calendar.YEAR);
         selectedMonth = cal.get(Calendar.MONTH) + 1;
 
-        tvMonthYear.setText(String.format(Locale.KOREA, "%04d. %02d ▾", selectedYear, selectedMonth));
+        tvMonthYear.setText(String.format(Locale.KOREA,"%04d. %02d ▾", selectedYear, selectedMonth));
 
+        // 월 선택 클릭
         tvMonthYear.setOnClickListener(view -> {
             DatePickerDialog dialog = new DatePickerDialog(
                     requireContext(),
                     (picker, year, month, day) -> {
                         selectedYear  = year;
                         selectedMonth = month + 1;
-                        tvMonthYear.setText(String.format(Locale.KOREA, "%04d. %02d ▾", year, month + 1));
+                        tvMonthYear.setText(String.format(Locale.KOREA,"%04d. %02d ▾", year, month + 1));
                         recalcAndRender();
                     },
                     selectedYear,
@@ -100,105 +104,102 @@ public class ExpenseList extends Fragment {
         // 환율 기준 버튼
         btnTodayRate.setOnClickListener(view -> {
             useToday = true;
-            updateRateToggleUI();
+            updateToggleUI();
             recalcAndRender();
         });
 
         btnTransactionRate.setOnClickListener(view -> {
             useToday = false;
-            updateRateToggleUI();
+            updateToggleUI();
             recalcAndRender();
         });
 
-        // 리스트
+        // 리스트 세팅
         rowAdapter = new RowAdapter();
         rvExpenseList.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvExpenseList.setAdapter(rowAdapter);
 
-        updateRateToggleUI();
+        updateToggleUI();
         recalcAndRender();
 
         return v;
     }
 
-    /** 버튼 UI 변경 */
-    private void updateRateToggleUI() {
+    private void updateToggleUI() {
         btnTodayRate.setSelected(useToday);
         btnTransactionRate.setSelected(!useToday);
     }
 
     /**
-     * 핵심 로직:
-     * 1) DB 전체 읽기
-     * 2) 월·연도 기준으로 필터링
-     * 3) Today vs Spend 기준 금액 계산
-     * 4) 총합·리스트 표시
+     * 핵심 계산 로직:
+     * - DB 전체 읽기
+     * - 선택된 연/월에 해당하는 지출만 필터링
+     * - TODAY / AT_SPEND 기준에 따른 금액 계산
+     * - 환차익/환차손 계산 (TODAY 기준 - AT_SPEND 기준)
      */
     private void recalcAndRender() {
         ioExecutor.execute(() -> {
 
-            List<Expense2> all = expenseDao.getAllExpenses();  // id DESC
-
+            List<Expense2> all = expenseDao.getAllExpenses();
             List<RowItem> rows = new ArrayList<>();
-            double totalAmount = 0.0;
+            double total = 0.0;
 
             for (Expense2 e : all) {
 
-                // ① spendDate(YYYY. MM. DD)에서 연·월 추출
+                // 날짜 파싱(YYYY. MM. DD)
                 if (e.spendDate == null || e.spendDate.length() < 10) continue;
 
                 int year  = Integer.parseInt(e.spendDate.substring(0, 4));
                 int month = Integer.parseInt(e.spendDate.substring(6, 8));
 
-                if (year != selectedYear || month != selectedMonth) {
+                if (year != selectedYear || month != selectedMonth) continue;
+
+                double mainAmount; // 리스트에 표시될 최종 금액(KRW)
+                double todayAmount = 0.0;
+                double atSpendAmount = e.targetAmount;
+
+                // ---------------------------
+                // Today 기준 금액 계산
+                // ---------------------------
+                try {
+                    if ("KRW".equalsIgnoreCase(e.baseCurrency)) {
+                        todayAmount = e.baseAmount;
+                    } else {
+                        double todayRate = fxClient.getRateWithCache(
+                                requireContext(),
+                                "latest",
+                                e.baseCurrency,
+                                "KRW"
+                        );
+                        todayAmount = e.baseAmount * todayRate;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                     continue;
                 }
 
-                // ② Today / AtSpend 기준 금액 계산
-                double mainAmount;
+                // ---------------------------
+                // 선택 기준: TODAY / AT_SPEND
+                // ---------------------------
+                mainAmount = useToday ? todayAmount : atSpendAmount;
+                total += mainAmount;
 
-                if (useToday) {
-                    // 최신 환율 API 호출
-                    double rate = 1.0;
-
-                    if (!"KRW".equalsIgnoreCase(e.baseCurrency)) {
-                        try {
-                            rate = fxClient.getRateToKrw("latest", e.baseCurrency);
-                        } catch (IOException | JSONException ex) {
-                            ex.printStackTrace();
-                            continue;
-                        }
-                    }
-                    mainAmount = e.baseAmount * rate;
-
-                } else {
-                    // 지출 시점 금액 = 저장된 targetAmount 그대로
-                    mainAmount = e.targetAmount;
-                }
-
-                totalAmount += mainAmount;
-
-                // 환차익/환차손 표시용
-                double diff = 0.0;
-                try {
-                    if (!"KRW".equalsIgnoreCase(e.baseCurrency)) {
-                        double todayRate = fxClient.getRateToKrw("latest", e.baseCurrency);
-                        double atSpendRate = fxClient.getRateToKrw(e.fxDate, e.baseCurrency);
-                        diff = (e.baseAmount * todayRate) - (e.baseAmount * atSpendRate);
-                    }
-                } catch (Exception ignored) {}
-
+                // ---------------------------
+                // 환차익/환차손 계산
+                // todayAmount - atSpendAmount
+                // ---------------------------
+                double diff = todayAmount - atSpendAmount;
                 String diffLabel = formatDiff(diff);
 
                 rows.add(new RowItem(
-                        e.spendDate,                       // 날짜
-                        (e.memo != null && !e.memo.isEmpty()) ? e.memo : e.category, // 이름
-                        formatAmount(mainAmount),          // 메인 금액
-                        diffLabel                          // 환차익/환차손
+                        e.spendDate,
+                        (e.memo != null && !e.memo.isEmpty()) ? e.memo : e.category,
+                        formatAmount(mainAmount),
+                        diffLabel
                 ));
             }
 
-            double finalTotal = totalAmount;
+            double finalTotal = total;
             List<RowItem> finalRows = rows;
 
             if (isAdded()) {
@@ -227,9 +228,9 @@ public class ExpenseList extends Fragment {
         else return "- ₩ " + nf.format(-diff) + " (환차손)";
     }
 
-    // =========================
+    // ============================
     // RecyclerView 내부 클래스
-    // =========================
+    // ============================
 
     private static class RowItem {
         final String date;
@@ -274,17 +275,14 @@ public class ExpenseList extends Fragment {
         }
 
         static class VH extends RecyclerView.ViewHolder {
-
             TextView tvDate, tvName, tvAmount, tvDiff;
-
-            VH(@NonNull View itemView) {
-                super(itemView);
-                tvDate   = itemView.findViewById(R.id.tv_date);
-                tvName   = itemView.findViewById(R.id.tv_expense_detail_name);
-                tvAmount = itemView.findViewById(R.id.tv_expense_amount_primary);
-                tvDiff   = itemView.findViewById(R.id.tv_expense_amount_secondary);
+            VH(View v) {
+                super(v);
+                tvDate   = v.findViewById(R.id.tv_date);
+                tvName   = v.findViewById(R.id.tv_expense_detail_name);
+                tvAmount = v.findViewById(R.id.tv_expense_amount_primary);
+                tvDiff   = v.findViewById(R.id.tv_expense_amount_secondary);
             }
-
             void bind(RowItem item) {
                 tvDate.setText(item.date);
                 tvName.setText(item.name);
