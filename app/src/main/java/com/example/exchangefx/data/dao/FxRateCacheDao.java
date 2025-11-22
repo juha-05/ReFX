@@ -2,16 +2,16 @@ package com.example.exchangefx.data.dao;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import com.example.exchangefx.data.entity.FxRateCache;
 
-import java.util.List;
-
 @Dao
 public interface FxRateCacheDao {
 
-    @Insert
+    // 캐시 저장 (같은 날짜 + 통화 조합이 이미 있으면 갱신)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertRate(FxRateCache fx);
 
     // 특정 날짜 + 통화 조합 캐시 조회
