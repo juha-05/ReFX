@@ -173,11 +173,9 @@ public class ChartsNav extends AppCompatActivity {
                         amountKrw = e.baseAmount * rateToKrw;
                     }
                 } catch (IOException ex) {
-                    // 환율 불러오기 실패한 항목은 차트에서 제외
-                    continue;
+                    // 환율 불러오기 실패해도 일단 0원으로 처리 (카테고리는 남기기)
+                    amountKrw = 0.0;
                 }
-
-                if (amountKrw <= 0) continue;
 
                 // ---------------- 카테고리별 합계 ----------------
                 String category = (e.category == null || e.category.isEmpty())
@@ -228,7 +226,6 @@ public class ChartsNav extends AppCompatActivity {
 
         for (Map.Entry<String, Double> entry : sumByCategory.entrySet()) {
             float value = entry.getValue().floatValue();
-            if (value <= 0f) continue;
             entries.add(new PieEntry(value, entry.getKey()));
         }
 
