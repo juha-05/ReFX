@@ -1,6 +1,7 @@
 package com.example.exchangefx.ui.chart;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.RadioButton;
@@ -148,33 +149,9 @@ public class ChartsNav extends AppCompatActivity {
 
             for (Expense2 e : all) {
 
-                String baseCur   = (e.baseCurrency   == null) ? "" : e.baseCurrency;
-                String targetCur = (e.targetCurrency == null) ? "" : e.targetCurrency;
-
-                double amountKrw = 0.0;
-
-                try {
-                    // 1) targetCurrency가 KRW인 경우 → targetAmount 그대로 사용
-                    if ("KRW".equalsIgnoreCase(targetCur)) {
-                        amountKrw = e.targetAmount;
-                    }
-                    // 2) baseCurrency가 KRW인 경우 → baseAmount 그대로 사용
-                    else if ("KRW".equalsIgnoreCase(baseCur)) {
-                        amountKrw = e.baseAmount;
-                    }
-                    // 3) 둘 다 KRW가 아니면: baseCurrency → KRW로 다시 환산
-                    else {
-                        double rateToKrw = fxClient.getRateWithCache(
-                                getApplicationContext(),
-                                e.fxDate,   // 지출 당시 환율 날짜
-                                baseCur,
-                                "KRW"
-                        );
-                        amountKrw = e.baseAmount * rateToKrw;
-                    }
-                } catch (IOException ex) {
-                    // 환율 불러오기 실패해도 금액만 0원으로 처리
-                    ex.printStackTrace();
+                // DB에 저장된 targetAmount(KRW 기준)를 그대로 사용
+                double amountKrw = e.targetAmount;
+                if (Double.isNaN(amountKrw) || Double.isInfinite(amountKrw)) {
                     amountKrw = 0.0;
                 }
 
@@ -215,6 +192,7 @@ public class ChartsNav extends AppCompatActivity {
     }
 
 
+
     // ---------------- PieChart 설정 & 렌더 ----------------
 
     private void setupPieChartStyle() {
@@ -237,27 +215,33 @@ public class ChartsNav extends AppCompatActivity {
         List<PieEntry> entries = new ArrayList<>();
 
         for (Map.Entry<String, Double> entry : sumByCategory.entrySet()) {
-            Double sum = entry.getValue();
-            float value = (sum == null) ? 0f : sum.floatValue();
+            float value = entry.getValue().floatValue();
 
-            // 값이 0이면 아주 작은 값으로 바꿔서
-            // 파이조각이 안 보이더라도 legend에는 항상 뜨게
-            if (value <= 0f) {
-                value = 0.0001f;
-            }
+            // 0 이하인 값은 차트에서 스킵
+            if (value <= 0f) continue;
 
-            entries.add(new PieEntry(value, entry.getKey()));
+            entries.add(new PieEntry(value, entry.getKey()));  // 라벨 = 카테고리 이름
         }
 
         PieDataSet dataSet = new PieDataSet(entries, "");
         dataSet.setSliceSpace(2f);
-        dataSet.setValueTextSize(12f);
+        dataSet.setValueTextSize(18f);
+
+        ArrayList<Integer> colors = new ArrayList<>();
+        colors.add(Color.parseColor(String.valueOf(R.color.point_blue)));
+        colors.add(Color.parseColor("6DA7F2"));
+        colors.add(Color.parseColor("#AAD1E7"));
+        colors.add(Color.parseColor("#A0C4F2"));
+        colors.add(Color.parseColor("#CEDEF2"));
+        colors.add(Color.parseColor("#023373"));
+
+
+        dataSet.setColors(colors);
 
         PieData data = new PieData(dataSet);
         pieChart.setData(data);
         pieChart.invalidate();
     }
-
 
     // ---------------- BarChart 설정 & 렌더 ----------------
 
