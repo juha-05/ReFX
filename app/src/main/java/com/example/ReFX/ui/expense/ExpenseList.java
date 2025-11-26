@@ -226,7 +226,9 @@ public class ExpenseList extends Fragment {
 
                 rows.add(new RowItem(
                         e.spendDate,
-                        (e.memo != null && !e.memo.isEmpty()) ? e.memo : e.category,
+                        (e.name != null && !e.name.isEmpty())
+                                ? e.name
+                                : ((e.memo != null && !e.memo.isEmpty()) ? e.memo : e.category),
                         formatAmount(mainAmount),   // 아래에서 통화 기호까지 포맷
                         diffLabel
                 ));
