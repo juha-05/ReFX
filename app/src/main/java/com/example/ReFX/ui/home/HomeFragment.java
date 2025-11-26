@@ -57,7 +57,7 @@ public class HomeFragment extends Fragment {
     private enum Basis { TODAY, AT_SPEND }
     private Basis currentBasis = Basis.TODAY;
 
-    private static final int MAX_RECENT = 5;
+    private static final int MAX_RECENT = 5; // 사용하지 않음
 
     public HomeFragment() {}
 
@@ -151,7 +151,7 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * 이번 달 지출만 합산하여 총액 계산 + 최근 지출도 이번 달만 보여준다.
+     * 이번 달 지출만 합산하여 총액 계산 + 최근 지출 전체 표시
      */
     private void recalcAmounts() {
         ioExecutor.execute(() -> {
@@ -159,7 +159,7 @@ public class HomeFragment extends Fragment {
             List<Expense2> all = expenseDao.getAllExpenses();
 
             // -------------------------------
-            // 🔥 이번 달 데이터만 필터링
+            // 이번 달 데이터만 필터링
             // -------------------------------
             String currentMonth = new SimpleDateFormat("yyyy. MM", Locale.KOREA)
                     .format(new Date());
@@ -173,7 +173,7 @@ public class HomeFragment extends Fragment {
             }
 
             // -------------------------------
-            // 🔥 환율 기준에 따라 총 합 계산
+            // 환율 기준에 따라 총 합 계산
             // -------------------------------
             double total = 0.0;
 
@@ -215,14 +215,10 @@ public class HomeFragment extends Fragment {
             }
 
             // -------------------------------
-            // 🔥 최근 5개 (이번 달 기준)
+            // 최근 지출 전체 (이번 달)
             // -------------------------------
-            Collections.reverse(thisMonth); // 최신 → 오래된 순 정렬 유지
-            List<Expense2> recent;
-            if (thisMonth.size() > MAX_RECENT)
-                recent = thisMonth.subList(0, MAX_RECENT);
-            else
-                recent = thisMonth;
+            Collections.reverse(thisMonth); // 최신순 정렬
+            List<Expense2> recent = thisMonth; // ★ 제한 없음
 
             double finalTotal = total;
 
