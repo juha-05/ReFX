@@ -8,7 +8,7 @@
     android:background="#FAFAFA"
     tools:context=".ui.home.HomeFragment">
 
-    <!-- 상단: 로고/앱 이름 -->
+    <!-- 상단: 로고 -->
     <ImageView
         android:id="@+id/homelogo"
         android:src="@drawable/logo"
@@ -18,8 +18,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
-
-    <!-- 이번 달 총 지출 카드 (+ 우측 > 표시) -->
+    <!-- 이번 달 총 지출 카드 -->
     <androidx.cardview.widget.CardView
         android:id="@+id/card_month_total"
         android:layout_width="0dp"
@@ -41,23 +40,22 @@
                 android:id="@+id/tv_month_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
                 android:text="@string/label_this_month_total"
                 android:textColor="@android:color/black"
                 android:textSize="16sp" />
 
-            <!-- 우측 꺾쇠(>) -->
+            <!-- 우측 꺾쇠 -->
             <TextView
                 android:id="@+id/tv_chevron"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignTop="@id/tv_month_title"
                 android:layout_alignParentEnd="true"
-                android:text="&gt;"
+                android:text=">"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <!-- 큰 금액 -->
+            <!-- 총 금액 -->
             <TextView
                 android:id="@+id/tv_total_expense_amount"
                 android:layout_width="wrap_content"
@@ -68,13 +66,13 @@
                 android:textSize="28sp"
                 android:textStyle="bold" />
 
-            <!-- 환율 기준 토글 (라디오 점) -->
+            <!-- 환율 기준 토글 -->
             <LinearLayout
                 android:id="@+id/layout_fx_basis"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tv_total_expense_amount"
                 android:layout_marginTop="8dp"
+                android:layout_below="@id/tv_total_expense_amount"
                 android:orientation="horizontal">
 
                 <TextView
@@ -95,7 +93,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:button="@drawable/radio_dot_selector"
-                        android:paddingEnd="8dp"
                         android:text="@string/fx_today" />
 
                     <RadioButton
@@ -106,24 +103,23 @@
                         android:text="@string/fx_at_spend" />
                 </RadioGroup>
             </LinearLayout>
-
         </RelativeLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 날짜 섹션 -->
+    <!-- 날짜 표시 -->
     <TextView
         android:id="@+id/tv_section_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
         android:text="2025. 11. 04"
         android:textSize="14sp"
         android:textStyle="bold"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="12dp"
         app:layout_constraintTop_toBottomOf="@id/card_month_total"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- 최근 지출 목록 (리사이클러뷰) -->
+    <!-- 최근 지출 RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_recent"
         android:layout_width="0dp"
@@ -134,9 +130,36 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/list_item_expense_home"/>
+        tools:listitem="@layout/list_item_expense_home" />
 
-    <!-- 퀵 지출 FAB + 라벨 -->
+
+    <!-- 왼쪽 아래: 챗봇 FAB + 라벨 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_chatbot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="56dp"
+        android:contentDescription="Chatbot"
+        app:backgroundTint="@color/point_blue"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:maxImageSize="32dp"
+        app:srcCompat="@drawable/ic_chatbot"
+        app:tint="@null" />
+
+    <TextView
+        android:id="@+id/tv_chatbot_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="챗봇"
+        android:textSize="12sp"
+        android:layout_marginTop="6dp"
+        app:layout_constraintTop_toBottomOf="@id/fab_chatbot"
+        app:layout_constraintStart_toStartOf="@id/fab_chatbot"
+        app:layout_constraintEnd_toEndOf="@id/fab_chatbot"/>
+
+    <!-- 오른쪽 아래: Quick 지출 FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_quick_add"
         android:layout_width="wrap_content"
@@ -161,7 +184,7 @@
         app:layout_constraintEnd_toEndOf="@id/fab_quick_add"
         android:layout_marginTop="6dp"/>
 
-    <!-- 하단 BottomNavigation -->
+    <!-- 하단 네비게이션 -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="0dp"
